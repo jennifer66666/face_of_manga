@@ -1,0 +1,25 @@
+cdecimal==2.3
+datashape==0.5.4  改为 0.5.2可以装 装了
+functools32==3.2.3.post2没装
+        functools32 is a backport of the Python 3.2 functools module for use 
+        on Python versions 2.7. It shouldn't be installed for Python 3.6.
+futures==3.2.0    改为3.1.1可以装 装了
+navigator-updater==0.1.0 没装 感觉不用
+numba==0.33.0+0.ge79330a.dirty  报错
+    ~/anaconda3/envs/py38/bin/pip install numba   requirement already satisfied
+PyAudio==0.2.7   感觉不用装
+pycosat==0.6.2  找不到
+    ~/anaconda3/envs/py38/bin/pip install pycosat  requirement already satisfied
+pycurl==7.43.0  找不到
+    ~/anaconda3/envs/py38/bin/pip install pycurl Requirement already satisfied:
+subprocess32==3.2.7 找不到
+    ~/anaconda3/envs/py38/bin/pip install subprocess32  装好了
+tables==3.3.0 找不到 
+    ~/anaconda3/envs/py38/bin/pip install tables   requirement already satisfied
+tensorflow==1.7.0 找不到
+    ~/anaconda3/envs/py38/bin/pip install tensorflow 装好了
+toolz==0.8.2 找不到
+    ~/anaconda3/envs/py38/bin/pip install toolz Requirement already satisfied
+xlwings==0.10.4 报错
+    ~/anaconda3/envs/py38/bin/pip install xlwings
+    Successfully installed xlwings-0.2.3

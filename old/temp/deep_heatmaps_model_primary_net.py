@@ -4,8 +4,10 @@ from glob import glob
 import os
 import numpy as np
 from ops import *
-import tensorflow as tf
-from tensorflow import contrib
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior() 
+#from tensorflow import contrib
 from menpo_functions import *
 from logging_functions import *
 from data_loading_functions import *
@@ -222,7 +224,8 @@ class DeepHeatmapsModel(object):
         with tf.name_scope(name):
 
             if self.weight_initializer == 'xavier':
-                weight_initializer = contrib.layers.xavier_initializer()
+                #weight_initializer = contrib.layers.xavier_initializer()
+                tf.compat.v1.keras.initializers.glorot_normal()
             else:
                 weight_initializer = tf.random_normal_initializer(stddev=self.weight_initializer_std)
 

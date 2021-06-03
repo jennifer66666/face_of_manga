@@ -32,7 +32,7 @@ flags.DEFINE_integer('debug_data_size', 20, 'subset data size to test in debug m
 flags.DEFINE_bool('debug', False, 'run in debug mode - use subset of the data')
 
 # pretrain parameters (for fine-tuning / resume training)
-flags.DEFINE_string('pre_train_path', 'model/deep_heatmaps-40000', 'pretrained model path')
+flags.DEFINE_string('pre_train_path', 'test_artistic_aug/model/deep_heatmaps-40000', 'pretrained model path')
 flags.DEFINE_bool('load_pretrain', False, "load pretrained weight?")
 flags.DEFINE_bool('load_primary_only', False, 'fine-tuning using only primary network weights')
 

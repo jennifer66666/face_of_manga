@@ -83,6 +83,12 @@ example for training a model with texture augmentation (100% of images) and geom
 python train_heatmaps_network.py --output_dir='test_artistic_aug' --augment_geom=True \
 --augment_texture=True --p_texture=1. --p_geom=0.7
 ```
+Train from given ckpt can be done with 
+```
+python train_heatmaps_network.py --output_dir='test_artistic_aug' --augment_geom=True \
+--augment_texture=True --p_texture=1. --p_geom=0.7 --load_pretrain=True --pre_train_path='test_artistic_aug/model/deep_heatmaps-40000'
+```
+The 40000 should be replaced with the ckpt you want.
 
 ### Testing 
 

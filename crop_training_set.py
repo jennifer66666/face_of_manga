@@ -1,10 +1,12 @@
-from scipy.misc import imsave
+#from scipy.misc import imsave
+from tensorflow.keras.preprocessing.image import save_img as imsave
 from menpo_functions import *
 from data_loading_functions import *
 
 
 # define paths & parameters for cropping dataset
-img_dir = '~/landmark_detection_datasets/'
+# img_dir = '~/#landmark_detection_datasets/'
+img_dir = 'landmark_detection_datasets/'
 dataset = 'training'
 bb_type = 'gt'
 margin = 0.25

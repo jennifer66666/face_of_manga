@@ -258,18 +258,20 @@ def load_menpo_image_list(
                                   return_transform=return_transform)
 
     def augment_menpo_img_ns_rand(img):
-        return augment_menpo_img_ns(img, img_dir_ns, p_ns=1. * (np.random.rand() < p_texture)[0])
+        #return augment_menpo_img_ns(img, img_dir_ns, p_ns=1. * (np.random.rand() < p_texture)[0])
+        return augment_menpo_img_ns(img, img_dir_ns, p_ns=(1. * (np.random.rand() < p_texture)))
 
     def augment_menpo_img_geom_rand(img):
-        return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom)[0])
+        #return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom)[0])
+        return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom))
 
-    if mode is 'TRAIN':
-        if train_crop_dir is None:
+    if mode == 'TRAIN':
+        if train_crop_dir == None:
             img_set_dir = os.path.join(img_dir, 'training')
             out_image_list = mio.import_images(img_set_dir, verbose=verbose, normalize=False)
-            if bb_type is 'gt':
+            if bb_type == 'gt':
                 out_image_list = out_image_list.map(crop_to_face_image_gt)
-            elif bb_type is 'init':
+            elif bb_type == 'init':
                 out_image_list = out_image_list.map(crop_to_face_image_init)
         else:
             img_set_dir = os.path.join(img_dir, train_crop_dir)
@@ -287,9 +289,9 @@ def load_menpo_image_list(
         if test_data in ['full', 'challenging', 'common', 'training', 'test']:
             img_set_dir = os.path.join(img_dir, test_data)
             out_image_list = mio.import_images(img_set_dir, verbose=verbose, normalize=False)
-            if bb_type is 'gt':
+            if bb_type == 'gt':
                 out_image_list = out_image_list.map(crop_to_face_image_gt)
-            elif bb_type is 'init':
+            elif bb_type == 'init':
                 out_image_list = out_image_list.map(crop_to_face_image_init)
         else:
             img_set_dir = os.path.join(img_dir, test_data)

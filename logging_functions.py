@@ -3,7 +3,8 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 from scipy.ndimage import zoom
-from scipy.misc import imresize
+#from scipy.misc import imresize
+import cv2
 
 
 def print_training_params_to_file(init_locals):

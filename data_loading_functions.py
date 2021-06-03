@@ -108,9 +108,8 @@ def create_approx_heat_maps_alloc_once(landmarks, maps, gauss_filt=None, win_mul
             max_col = image_size
         else:
             max_col_gap = 0
-
-        maps[min_row:max_row, min_col:max_col, i] =\
-            gauss_filt[min_row_gap:filt_size - 1 * max_row_gap, min_col_gap:filt_size - 1 * max_col_gap]
+        maps[int(min_row):int(max_row), int(min_col):int(max_col), i] =\
+            gauss_filt[min_row_gap:int(filt_size - 1 * max_row_gap), min_col_gap:int(filt_size - 1 * max_col_gap)]
 
 
 def load_images_landmarks_approx_maps_alloc_once(

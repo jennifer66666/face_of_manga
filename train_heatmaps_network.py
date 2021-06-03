@@ -1,8 +1,11 @@
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior() 
 from deep_heatmaps_model_fusion_net import DeepHeatmapsModel
 import os
 
-flags = tf.app.flags
+#flags = tf.app.flags
+flags = tf.compat.v1.flags
 
 # define paths
 flags.DEFINE_string('output_dir', 'output', "directory for saving models, logs and samples")
@@ -10,7 +13,7 @@ flags.DEFINE_string('save_model_path', 'model', "directory for saving the model"
 flags.DEFINE_string('save_sample_path', 'sample',
                     "directory for saving the sampled images, relevant if sample_to_log is False")
 flags.DEFINE_string('save_log_path', 'logs', "directory for saving the log file")
-flags.DEFINE_string('img_path', '~/landmark_detection_datasets', "data directory")
+flags.DEFINE_string('img_path', 'landmark_detection_datasets', "data directory")
 flags.DEFINE_string('valid_data', 'full', 'validation set to use: full/common/challenging/test')
 flags.DEFINE_string('train_crop_dir', 'crop_gt_margin_0.25', "directory of train images cropped to bb (+margin)")
 flags.DEFINE_string('img_dir_ns', 'crop_gt_margin_0.25_ns', "directory of train imgs cropped to bb + style transfer")
@@ -110,4 +113,5 @@ def main(_):
 
 
 if __name__ == '__main__':
-    tf.app.run()
+    #tf.app.run()
+    tf.compat.v1.app.run()

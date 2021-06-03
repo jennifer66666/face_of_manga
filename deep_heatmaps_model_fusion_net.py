@@ -4,8 +4,10 @@ from glob import glob
 import os
 import numpy as np
 from ops import *
-import tensorflow as tf
-from tensorflow import contrib
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior() 
+#from tensorflow.compat.v1 import contrib
 from menpo_functions import *
 from logging_functions import *
 from data_loading_functions import *
@@ -41,7 +43,8 @@ class DeepHeatmapsModel(object):
 
         self.compute_nme = True  # compute normalized mean error
 
-        self.config = tf.ConfigProto()
+        #self.config = tf.ConfigProto()
+        self.config = tf.compat.v1.ConfigProto()
         self.config.gpu_options.allow_growth = True
 
         # sampling and logging parameters
@@ -153,8 +156,8 @@ class DeepHeatmapsModel(object):
                     self.valid_images_loaded =\
                         np.zeros([self.valid_size, self.image_size, self.image_size, self.c_dim]).astype('float32')
                     self.valid_gt_maps_small_loaded =\
-                        np.zeros([self.valid_size, self.image_size / 4, self.image_size / 4,
-                                  self.num_landmarks]).astype('float32')
+                        np.zeros([int(self.valid_size), int(self.image_size / 4), int(self.image_size / 4),
+                                  int(self.num_landmarks)]).astype('float32')
                     self.valid_gt_maps_loaded =\
                         np.zeros([self.valid_size, self.image_size, self.image_size, self.num_landmarks]
                                  ).astype('float32')
@@ -235,7 +238,8 @@ class DeepHeatmapsModel(object):
         with tf.name_scope(name):
 
             if self.weight_initializer == 'xavier':
-                weight_initializer = contrib.layers.xavier_initializer()
+                #weight_initializer = contrib.layers.xavier_initializer()
+                weight_initializer = tf.compat.v1.keras.initializers.glorot_normal()
             else:
                 weight_initializer = tf.random_normal_initializer(stddev=self.weight_initializer_std)
 
@@ -359,7 +363,7 @@ class DeepHeatmapsModel(object):
                 else:
                     return landmarks_rms_err
 
-        if self.mode is 'TRAIN':
+        if self.mode == 'TRAIN':
 
             # calculate L2 loss between ideal and predicted heatmaps
             primary_maps_diff = self.pred_hm_p - self.heatmaps_small
@@ -765,9 +769,9 @@ class DeepHeatmapsModel(object):
 
             test_image = test_image.pixels_with_channels_at_back().astype('float32')
             if norm:
-                if self.scale is '255':
+                if self.scale == '255':
                     test_image *= 255
-                elif self.scale is '0':
+                elif self.scale == '0':
                     test_image = 2 * test_image - 1
 
             map_primary, map_fusion, map_upsample = sess.run(

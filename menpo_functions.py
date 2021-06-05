@@ -204,9 +204,11 @@ def augment_menpo_img_ns(img, img_dir_ns, p_ns=0.):
 
     img = img.copy()
     if p_ns > 0.5:
+        # 取style_transfer后某张图片的所有效果图
         ns_augs = glob(os.path.join(img_dir_ns, img.path.name.split('.')[0] + '_ns*'))
         num_augs = len(ns_augs)
         if num_augs > 0:
+            # 任取其中一个style
             ns_ind = np.random.randint(0, num_augs)
             ns_aug = mio.import_image(ns_augs[ns_ind])
             ns_pixels = ns_aug.pixels

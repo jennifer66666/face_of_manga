@@ -42,26 +42,32 @@ def deform_mouth(lms, p_scale=0, p_shift=0, pad=5):
     # scale facial feature
     scale = np.random.rand()
     if p_scale > 0.5 and scale > 0.5:
-
+        # 求嘴部分的x，y方向均值
         part_mean = np.mean(lms[part_inds, :], 0)
+        # 鼻子部分基于均值归一化
         lms_part_norm = lms[part_inds, :] - part_mean
-
+        # 找出归一化后鼻子部分的框
         part_y_bound_min, part_x_bound_min = np.min(lms_part_norm, 0)
         part_y_bound_max, part_x_bound_max = np.max(lms_part_norm, 0)
-
+        # y部分的拉伸不能超过scale_max_y, 因为拉伸后的y不能越过y_min,y_max
         scale_max_y = np.minimum(
             (y_min - part_mean[0]) / part_y_bound_min,
             (y_max - part_mean[0]) / part_y_bound_max)
+        # 而且拉伸不超过1.2倍
         scale_max_y = np.minimum(scale_max_y, 1.2)
-
+        # 同理x部分的拉伸不能超过scale_max_x
         scale_max_x = np.minimum(
             (x_min - part_mean[1]) / part_x_bound_min,
             (x_max - part_mean[1]) / part_x_bound_max)
+        # 而且拉伸不超过1.2倍
         scale_max_x = np.minimum(scale_max_x, 1.2)
-
+        
+        # 在0.7到最大拉伸值之间找随机数
         scale_y = np.random.uniform(0.7, scale_max_y)
         scale_x = np.random.uniform(0.7, scale_max_x)
 
+        # 对嘴部分拉伸scale_x,scale_y; 不平移
+        # 产出拉伸点lms_def_scale
         lms_def_scale = deform_part(lms, part_inds, scale_y=scale_y, scale_x=scale_x, shift_ver=0., shift_horiz=0.)
 
         # check for spatial errors
@@ -84,7 +90,7 @@ def deform_mouth(lms, p_scale=0, p_shift=0, pad=5):
                                     x_max - (part_mean[1] + part_x_bound_max))
         shift_y = np.random.uniform(y_min - (part_mean[0] + part_y_bound_min),
                                     y_max - (part_mean[0] + part_y_bound_max))
-
+        # scale设为1就是不拉伸，仅作平移
         lms_def = deform_part(lms_def_scale, part_inds, scale_y=1., scale_x=1., shift_ver=shift_y, shift_horiz=shift_x)
         error = check_deformation_spatial_errors(lms_def, part_inds, pad=pad)
         if error:
@@ -106,7 +112,9 @@ def deform_nose(lms, p_scale=0, p_shift=0, pad=5):
     part_inds = nose_inds.copy()
 
     # find part spatial limitations
+    #                  鼻梁四点x轴上的最大值 +  右眼x轴上最小值                   -   鼻梁4点x轴最大值的一半   -pad？
     x_max = np.max(lms[part_inds[:4], 1]) + (np.min(lms[right_eye_inds, 1]) - np.max(lms[part_inds[:4], 1])) * 0.5 - pad
+    #                  左眼x轴上最大值      +  鼻梁四点x轴最小值                - 左眼x最大值的一半            +pad？
     x_min = np.max(lms[left_eye_inds, 1]) + (np.min(lms[part_inds[:4], 1]) - np.max(lms[left_eye_inds, 1])) * 0.5 + pad
 
     max_brows = np.max(lms[21:23, 0])
@@ -371,6 +379,8 @@ def part_intersection(part_to_check, points_to_compare, pad=0):
     check_bounds = np.round(get_bounds(part_to_check))
     check_bounds[:, 0] += pad
     check_bounds[:, 1] -= pad
+    # 检查其他部分有没有和变形的部分重合
+    # 变形部分形成一个框，其他部分不能进到这个框里来
     inds_y = np.where(np.logical_and(points_to_compare[:,0] > check_bounds[1,0], points_to_compare[:,0]<check_bounds[1,1]))
     inds_x = np.where(np.logical_and(points_to_compare[:,1] > check_bounds[0,0], points_to_compare[:,1]<check_bounds[0,1]))
     return np.intersect1d(inds_y, inds_x)

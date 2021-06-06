@@ -199,7 +199,7 @@ def augment_face_image(img, image_size=256, crop_size=248, angle_range=30, flip=
     return img
 
 
-def augment_menpo_img_ns(img, img_dir_ns, p_ns=0.):
+def augment_menpo_img_ns(img, img_dir_ns, p_ns=0.,ns_ind=None):
     """texture style image augmentation using stylized copies in *img_dir_ns*"""
 
     img = img.copy()
@@ -209,7 +209,9 @@ def augment_menpo_img_ns(img, img_dir_ns, p_ns=0.):
         num_augs = len(ns_augs)
         if num_augs > 0:
             # 任取其中一个style
-            ns_ind = np.random.randint(0, num_augs)
+            # 可以对其指定；不指定的使用就随机选
+            if ns_ind == None:
+                ns_ind = np.random.randint(0, num_augs)
             ns_aug = mio.import_image(ns_augs[ns_ind])
             ns_pixels = ns_aug.pixels
             img.pixels = ns_pixels
@@ -259,9 +261,9 @@ def load_menpo_image_list(
         return crop_to_face_image(img, bb_dictionary=None, margin=margin, image_size=image_size,
                                   return_transform=return_transform)
 
-    def augment_menpo_img_ns_rand(img):
+    def augment_menpo_img_ns_rand(img,ns_ind=None):
         #return augment_menpo_img_ns(img, img_dir_ns, p_ns=1. * (np.random.rand() < p_texture)[0])
-        return augment_menpo_img_ns(img, img_dir_ns, p_ns=(1. * (np.random.rand() < p_texture)))
+        return augment_menpo_img_ns(img, img_dir_ns, p_ns=(1. * (np.random.rand() < p_texture)),ns_ind = ns_ind)
 
     def augment_menpo_img_geom_rand(img):
         #return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom)[0])

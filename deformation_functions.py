@@ -177,7 +177,7 @@ def deform_nose(lms, p_scale=0, p_shift=0, pad=5):
     return lms_def
 
 
-def deform_eyes(lms, p_scale=0, p_shift=0, pad=10):
+def deform_eyes(lms, p_scale=0, p_shift=0, pad=10,scale_x=None,scale_y=None):
     """ deform eyes + eyebrows landmarks - matching ibug annotations of 68 landmarks """
 
     nose_inds = np.arange(27, 36)
@@ -246,8 +246,9 @@ def deform_eyes(lms, p_scale=0, p_shift=0, pad=10):
 
         scale_max_x = np.minimum(scale_max_x_left, scale_max_x_right)
         scale_max_y = np.minimum(scale_max_y_left, scale_max_y_right)
-        scale_y = np.random.uniform(0.8, scale_max_y)
-        scale_x = np.random.uniform(0.8, scale_max_x)
+        if scale_x==None and scale_y==None:
+            scale_y = np.random.uniform(0.8, scale_max_y)
+            scale_x = np.random.uniform(0.8, scale_max_x)
 
         lms_def_scale = deform_part(lms, part_inds_right, scale_y=scale_y, scale_x=scale_x, shift_ver=0.,
                                     shift_horiz=0.)
@@ -258,7 +259,7 @@ def deform_eyes(lms, p_scale=0, p_shift=0, pad=10):
         error2 = check_deformation_spatial_errors(lms_def_scale, part_inds_left, pad=pad)
         error = error1 + error2
         if error:
-            lms_def_scale = lms.copy()
+           lms_def_scale = lms.copy()
     else:
         lms_def_scale = lms.copy()
 
@@ -358,13 +359,13 @@ def deform_scale_face(lms, p_scale=0, pad=5, image_size=256):
     return lms_def_scale
 
 
-def deform_face_geometric_style(lms, p_scale=0, p_shift=0):
+def deform_face_geometric_style(lms, p_scale=0, p_shift=0,scale_x=None,scale_y=None):
     """ deform facial landmarks - matching ibug annotations of 68 landmarks """
 
     lms = deform_scale_face(lms.copy(), p_scale=p_scale, pad=0)
     lms = deform_nose(lms.copy(), p_scale=p_scale, p_shift=p_shift, pad=0)
     lms = deform_mouth(lms.copy(), p_scale=p_scale, p_shift=p_shift, pad=0)
-    lms = deform_eyes(lms.copy(), p_scale=p_scale, p_shift=p_shift, pad=0)
+    lms = deform_eyes(lms.copy(), p_scale=p_scale, p_shift=p_shift, pad=0,scale_x=scale_x,scale_y=scale_y)
     return lms
 
 

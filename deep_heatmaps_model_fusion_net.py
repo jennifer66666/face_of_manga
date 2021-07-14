@@ -28,7 +28,8 @@ class DeepHeatmapsModel(object):
                  img_path='data', test_data='full', valid_data='full', valid_size=0, log_valid_every=5,
                  train_crop_dir='crop_gt_margin_0.25', img_dir_ns='crop_gt_margin_0.25_ns',
                  print_every=100, save_every=5000, sample_every=5000, sample_grid=9, sample_to_log=True,
-                 debug_data_size=20, debug=False, epoch_data_dir='epoch_data', use_epoch_data=False, menpo_verbose=True):
+                 debug_data_size=20, debug=False, epoch_data_dir='epoch_data', use_epoch_data=False, menpo_verbose=True,
+                 no_need_bb=False):
 
         # define some extra parameters
 
@@ -109,9 +110,16 @@ class DeepHeatmapsModel(object):
         self.valid_size = valid_size
         self.valid_data = valid_data
 
+        self.no_need_bb = no_need_bb
+
         # load image, bb and landmark data using menpo
-        self.bb_dir = os.path.join(img_path, 'Bounding_Boxes')
-        self.bb_dictionary = load_bb_dictionary(self.bb_dir, mode, test_data=self.test_data)
+        if self.no_need_bb:
+            self.bb_dir = None
+            self.bb_dictionary = None
+        else:
+            self.bb_dir = os.path.join(img_path, 'Bounding_Boxes')
+            self.bb_dictionary = load_bb_dictionary(self.bb_dir, mode, test_data=self.test_data)
+            
 
         # use pre-augmented data, to save time during training
         if self.use_epoch_data:
@@ -119,13 +127,13 @@ class DeepHeatmapsModel(object):
             self.img_menpo_list = load_menpo_image_list(
                 img_path, train_crop_dir=epoch_0, img_dir_ns=None, mode=mode, bb_dictionary=self.bb_dictionary,
                 image_size=self.image_size, test_data=self.test_data, augment_basic=False, augment_texture=False,
-                augment_geom=False, verbose=menpo_verbose)
+                augment_geom=False, verbose=menpo_verbose,num_landmarks=self.num_landmarks)
         else:
             self.img_menpo_list = load_menpo_image_list(
                 img_path, train_crop_dir, self.img_dir_ns, mode, bb_dictionary=self.bb_dictionary,
                 image_size=self.image_size, margin=margin, bb_type=bb_type, test_data=self.test_data,
                 augment_basic=augment_basic, augment_texture=augment_texture, p_texture=p_texture,
-                augment_geom=augment_geom, p_geom=p_geom, verbose=menpo_verbose)
+                augment_geom=augment_geom, p_geom=p_geom, verbose=menpo_verbose,num_landmarks=self.num_landmarks)
 
         if mode == 'TRAIN':
 
@@ -139,12 +147,14 @@ class DeepHeatmapsModel(object):
                     self.img_menpo_list = self.img_menpo_list[self.train_inds]
 
                 if valid_size > 0:
-
-                    self.valid_bb_dictionary = load_bb_dictionary(self.bb_dir, 'TEST', test_data=self.valid_data)
+                    if not self.no_need_bb:
+                        self.valid_bb_dictionary = load_bb_dictionary(self.bb_dir, 'TEST', test_data=self.valid_data)
+                    else:
+                        self.valid_bb_dictionary = None
                     self.valid_img_menpo_list = load_menpo_image_list(
                         img_path, train_crop_dir, self.img_dir_ns, 'TEST', bb_dictionary=self.valid_bb_dictionary,
                         image_size=self.image_size, margin=margin, bb_type=bb_type, test_data=self.valid_data,
-                        verbose=menpo_verbose)
+                        verbose=menpo_verbose,num_landmarks=self.num_landmarks)
 
                     np.random.seed(0)
                     self.val_inds = np.arange(len(self.valid_img_menpo_list))
@@ -571,7 +581,7 @@ class DeepHeatmapsModel(object):
                         self.img_menpo_list = load_menpo_image_list(
                             self.img_path, train_crop_dir=epoch_dir, img_dir_ns=None, mode=self.mode,
                             bb_dictionary=self.bb_dictionary, image_size=self.image_size, test_data=self.test_data,
-                            augment_basic=False, augment_texture=False, augment_geom=False)
+                            augment_basic=False, augment_texture=False, augment_geom=False,num_landmarks=self.num_landmarks)
 
                 # get batch indices
                 batch_inds = img_inds[j * self.batch_size:(j + 1) * self.batch_size]

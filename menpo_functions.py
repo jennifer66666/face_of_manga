@@ -7,6 +7,7 @@ import menpo.transform as mt
 import menpo.io as mio
 from glob import glob
 from deformation_functions import *
+from pts60_deformation_functions import *
 
 # landmark indices by facial feature
 jaw_indices = np.arange(0, 17)
@@ -218,13 +219,16 @@ def augment_menpo_img_ns(img, img_dir_ns, p_ns=0.,ns_ind=None):
     return img
 
 
-def augment_menpo_img_geom(img, p_geom=0.):
+def augment_menpo_img_geom(img, num_landmarks=68,p_geom=0.):
     """geometric style image augmentation using random face deformations"""
 
     img = img.copy()
     if p_geom > 0.5:
         grp_name = img.landmarks.group_labels[0]
-        lms_geom_warp = deform_face_geometric_style(img.landmarks[grp_name].points.copy(), p_scale=p_geom, p_shift=p_geom)
+        if num_landmarks==68:
+            lms_geom_warp = deform_face_geometric_style(img.landmarks[grp_name].points.copy(), p_scale=p_geom, p_shift=p_geom)
+        else:
+            lms_geom_warp = pts60_deform_face_geometric_style(img.landmarks[grp_name].points.copy(), p_scale=p_geom, p_shift=p_geom)
         img = warp_face_image_tps(img, PointCloud(lms_geom_warp), grp_name)
     return img
 
@@ -244,8 +248,8 @@ def warp_face_image_tps(img, new_shape, lms_grp_name='PTS', warp_mode='constant'
 
 def load_menpo_image_list(
     img_dir, train_crop_dir, img_dir_ns, mode, bb_dictionary=None, image_size=256, margin=0.25,
-    bb_type='gt', test_data='full', augment_basic=True, augment_texture=False, p_texture=0,
-    augment_geom=False, p_geom=0, verbose=False, return_transform=False):
+    bb_type='gt', test_data='cropped_only', augment_basic=True, augment_texture=False, p_texture=0,
+    augment_geom=False, p_geom=0, verbose=False, return_transform=False,num_landmarks=68):
 
     """load images from image dir to create menpo-type image list"""
 
@@ -265,13 +269,13 @@ def load_menpo_image_list(
         #return augment_menpo_img_ns(img, img_dir_ns, p_ns=1. * (np.random.rand() < p_texture)[0])
         return augment_menpo_img_ns(img, img_dir_ns, p_ns=(1. * (np.random.rand() < p_texture)),ns_ind = ns_ind)
 
-    def augment_menpo_img_geom_rand(img):
+    def augment_menpo_img_geom_rand(img,num_landmarks=num_landmarks):
         #return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom)[0])
-        return augment_menpo_img_geom(img, p_geom=1. * (np.random.rand() < p_geom))
+        return augment_menpo_img_geom(img,num_landmarks = num_landmarks, p_geom=1. * (np.random.rand() < p_geom))
 
     if mode == 'TRAIN':
         if train_crop_dir == None:
-            img_set_dir = os.path.join(img_dir, 'training')
+            img_set_dir = os.path.join(img_dir, 'ori_only')
             out_image_list = mio.import_images(img_set_dir, verbose=verbose, normalize=False)
             if bb_type == 'gt':
                 out_image_list = out_image_list.map(crop_to_face_image_gt)

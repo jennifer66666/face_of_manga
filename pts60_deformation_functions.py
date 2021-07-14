@@ -102,84 +102,6 @@ def pts60_deform_mouth(lms, p_scale=0, p_shift=0, pad=5):
 
     return lms_def
 
-
-def pts60_deform_nose(lms, p_scale=0, p_shift=0, pad=5):
-    """ deform nose landmarks - matching ibug annotations of 68 landmarks """
-    
-    # 左右眼珠要管吗？
-    nose_inds = np.arange(49, 50)
-    left_eye_inds = np.arange(27, 37)
-    right_eye_inds = np.arange(37, 47)
-    mouth_inds = np.arange(50, 60)
-
-    part_inds = nose_inds.copy()
-
-    # find part spatial limitations
-    #                  鼻梁四点x轴上的最大值 +  右眼x轴上最小值                   -   鼻梁4点x轴最大值的一半   -pad？
-    x_max = np.max(lms[part_inds[:4], 1]) + (np.min(lms[right_eye_inds, 1]) - np.max(lms[part_inds[:4], 1])) * 0.5 - pad
-    #                  左眼x轴上最大值      +  鼻梁四点x轴最小值                - 左眼x最大值的一半            +pad？
-    x_min = np.max(lms[left_eye_inds, 1]) + (np.min(lms[part_inds[:4], 1]) - np.max(lms[left_eye_inds, 1])) * 0.5 + pad
-
-    max_brows = np.max(lms[21:23, 0])
-    y_min = np.min(lms[part_inds, 0]) + (max_brows - np.min(lms[part_inds, 0])) * 0.5
-    min_mouth = np.min(lms[mouth_inds, 0])
-    y_max = np.max(lms[part_inds, 0]) + (np.max(lms[part_inds, 0]) - min_mouth) * 0 - pad
-
-    # scale facial feature
-    scale = np.random.rand()
-    if p_scale > 0.5 and scale > 0.5:
-
-        part_mean = np.mean(lms[part_inds, :], 0)
-        lms_part_norm = lms[part_inds, :] - part_mean
-
-        part_y_bound_min = np.min(lms_part_norm[:, 0])
-        part_y_bound_max = np.max(lms_part_norm[:, 0])
-
-        scale_max_y = np.minimum(
-            (y_min - part_mean[0]) / part_y_bound_min,
-            (y_max - part_mean[0]) / part_y_bound_max)
-        scale_y = np.random.uniform(0.7, scale_max_y)
-        scale_x = np.random.uniform(0.7, 1.5)
-
-        lms_def_scale = deform_part(lms, part_inds, scale_y=scale_y, scale_x=scale_x, shift_ver=0., shift_horiz=0.)
-
-        error1 = check_deformation_spatial_errors(lms_def_scale, part_inds[:4], pad=pad)
-        error2 = check_deformation_spatial_errors(lms_def_scale, part_inds[4:], pad=pad)
-        error = error1 + error2
-        if error:
-            lms_def_scale = lms.copy()
-    else:
-        lms_def_scale = lms.copy()
-
-    # shift facial feature
-    if p_shift > 0.5 and (np.random.rand() > 0.5 or not scale):
-
-        part_mean = np.mean(lms_def_scale[part_inds, :], 0)
-        lms_part_norm = lms_def_scale[part_inds, :] - part_mean
-
-        part_x_bound_min = np.min(lms_part_norm[:4], 0)
-        part_x_bound_max = np.max(lms_part_norm[:4], 0)
-        part_y_bound_min = np.min(lms_part_norm[:, 0])
-        part_y_bound_max = np.max(lms_part_norm[:, 0])
-
-        shift_x = np.random.uniform(x_min - (part_mean[1] + part_x_bound_min),
-                                    x_max - (part_mean[1] + part_x_bound_max))
-        shift_y = np.random.uniform(y_min - (part_mean[0] + part_y_bound_min),
-                                    y_max - (part_mean[0] + part_y_bound_max))
-
-        lms_def = deform_part(lms_def_scale, part_inds, scale_y=1., scale_x=1., shift_ver=shift_y, shift_horiz=shift_x)
-
-        error1 = check_deformation_spatial_errors(lms_def, part_inds[:4], pad=pad)
-        error2 = check_deformation_spatial_errors(lms_def, part_inds[4:], pad=pad)
-        error = error1 + error2
-        if error:
-            lms_def = lms_def_scale.copy()
-    else:
-        lms_def = lms_def_scale.copy()
-
-    return lms_def
-
-
 def pts60_deform_eyes(lms, p_scale=0, p_shift=0, pad=10,scale_x=None,scale_y=None):
     """ deform eyes + eyebrows landmarks - matching ibug annotations of 68 landmarks """
 
@@ -188,25 +110,31 @@ def pts60_deform_eyes(lms, p_scale=0, p_shift=0, pad=10,scale_x=None,scale_y=Non
     right_eye_inds = np.arange(37, 47)
     left_brow_inds = np.arange(17, 22)
     right_brow_inds = np.arange(22, 27)
+    left_pupil_indx = np.arange(47, 48)
+    right_pupil_indx = np.arange(48, 49)
 
-    part_inds_right = np.hstack((right_brow_inds, right_eye_inds))
-    part_inds_left = np.hstack((left_brow_inds, left_eye_inds))
+    part_inds_right = np.hstack((right_brow_inds, right_eye_inds,right_pupil_indx))
+    part_inds_left = np.hstack((left_brow_inds, left_eye_inds,left_pupil_indx))
 
     # find part spatial limitations
 
     # right eye+eyebrow
+    # manga‘s face outline right most is also 16
     x_max_right = np.max(lms[part_inds_right, 1]) + (lms[16, 1] - np.max(lms[part_inds_right, 1])) * 0.5 - pad
-    x_min_right = np.max(lms[nose_inds[:4], 1]) + (np.min(lms[part_inds_right, 1]) - np.max(
-        lms[nose_inds[:4], 1])) * 0.5 + pad
-    y_max_right = np.max(lms[part_inds_right, 0]) + (lms[33, 0] - np.max(lms[part_inds_right, 0])) * 0.25 - pad
+    #x_min_right = np.max(lms[nose_inds[:4], 1]) + (np.min(lms[part_inds_right, 1]) - np.max(
+    #    lms[nose_inds[:4], 1])) * 0.5 + pad
+    # different with portrait， manga nose get only one point
+    x_min_right = lms[nose_inds[0], 1] + (np.min(lms[part_inds_right, 1]) - lms[nose_inds[0], 1]) * 0.5 + pad
+    # nose is now 49 index
+    y_max_right = np.max(lms[part_inds_right, 0]) + (lms[49, 0] - np.max(lms[part_inds_right, 0])) * 0.25 - pad
     y_min_right = 2 * pad
 
     # left eye+eyebrow
-    x_max_left = np.max(lms[part_inds_left, 1]) + (np.min(lms[nose_inds[:4], 1]) - np.max(
+    x_max_left = np.max(lms[part_inds_left, 1]) + (lms[nose_inds[0], 1] - np.max(
         lms[part_inds_left, 1])) * 0.5 - pad
     x_min_left = lms[0, 1] + (np.min(lms[part_inds_left, 1]) - lms[0, 1]) * 0.5 + pad
 
-    y_max_left = np.max(lms[part_inds_left, 0]) + (lms[33, 0] - np.max(lms[part_inds_left, 0])) * 0.25 - pad
+    y_max_left = np.max(lms[part_inds_left, 0]) + (lms[49, 0] - np.max(lms[part_inds_left, 0])) * 0.25 - pad
     y_min_left = 2 * pad
 
     # scale facial feature

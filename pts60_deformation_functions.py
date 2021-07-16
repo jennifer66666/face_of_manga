@@ -37,6 +37,7 @@ def pts60_deform_mouth(lms, p_scale=0, p_shift=0, pad=5):
         lms[part_inds, 1])) * 0.5 - pad
     x_min = np.min(lms[jaw_line_inds[jaw_pad:-jaw_pad], 1]) + (np.min(lms[part_inds, 1]) - np.min(
         lms[jaw_line_inds[jaw_pad:-jaw_pad], 1])) * 0.5 + pad
+    # y从上往下增大
     y_min = np.max(lms[nose_inds, 0]) + (np.min(lms[part_inds, 0]) - np.max(lms[nose_inds, 0])) * 0.5
     max_jaw = np.minimum(np.max(lms[jaw_line_inds, 0]), lms[8, 0])
     y_max = max_jaw - (max_jaw - np.max(lms[part_inds, 0])) * 0.5 - pad
@@ -53,18 +54,22 @@ def pts60_deform_mouth(lms, p_scale=0, p_shift=0, pad=5):
         part_y_bound_max, part_x_bound_max = np.max(lms_part_norm, 0)
         # y部分的拉伸不能超过scale_max_y, 因为拉伸后的y不能越过y_min,y_max
         scale_max_y = np.minimum(
-            (y_min - part_mean[0]) / part_y_bound_min,
-            (y_max - part_mean[0]) / part_y_bound_max)
+            (y_min - part_mean[0]) / (part_y_bound_min+1e-4),
+            (y_max - part_mean[0]) / (part_y_bound_max+1e-4))
         # 而且拉伸不超过1.2倍
         scale_max_y = np.minimum(scale_max_y, 1.2)
         # 同理x部分的拉伸不能超过scale_max_x
         scale_max_x = np.minimum(
-            (x_min - part_mean[1]) / part_x_bound_min,
-            (x_max - part_mean[1]) / part_x_bound_max)
+            (x_min - part_mean[1]) / (part_x_bound_min+1e-4),
+            (x_max - part_mean[1]) / (part_x_bound_max+1e-4))
         # 而且拉伸不超过1.2倍
         scale_max_x = np.minimum(scale_max_x, 1.2)
         
         # 在0.7到最大拉伸值之间找随机数
+        if scale_max_y<0.71:
+            scale_max_y=0.71
+        if scale_max_x<0.71:
+            scale_max_x=0.71
         scale_y = np.random.uniform(0.7, scale_max_y)
         scale_x = np.random.uniform(0.7, scale_max_x)
 

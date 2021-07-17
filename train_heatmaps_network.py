@@ -40,7 +40,7 @@ flags.DEFINE_bool('load_primary_only', False, 'fine-tuning using only primary ne
 # input data parameters
 flags.DEFINE_integer('image_size', 256, "image size")
 flags.DEFINE_integer('c_dim', 3, "color channels")
-flags.DEFINE_integer('num_landmarks', 68, "number of face landmarks")
+flags.DEFINE_integer('num_landmarks', 60, "number of face landmarks")
 flags.DEFINE_float('sigma', 6, "std for heatmap generation gaussian")
 flags.DEFINE_integer('scale', 1, 'scale for image normalization 255/1/0')
 flags.DEFINE_float('margin', 0.25, 'margin for face crops - % of bb size')

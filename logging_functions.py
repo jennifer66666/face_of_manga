@@ -17,7 +17,7 @@ def print_training_params_to_file(init_locals):
             f.write('* %s: %s\n' % (key, value))
 
 
-def heat_maps_to_landmarks(maps, image_size=256, num_landmarks=68):
+def heat_maps_to_landmarks(maps, image_size=256, num_landmarks=60):
     """find landmarks from heatmaps (arg max on each map)"""
 
     landmarks = np.zeros((num_landmarks,2)).astype('float32')

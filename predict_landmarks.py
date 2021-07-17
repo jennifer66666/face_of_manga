@@ -1,11 +1,13 @@
 from menpo_functions import *
 from deep_heatmaps_model_fusion_net import DeepHeatmapsModel
-from scipy.misc import imsave
+#from scipy.misc import imsave
+from tensorflow.keras.preprocessing.image import save_img as imsave
 
 # *************** define parameters and paths ***************
 
-data_dir = '~/AF_dataset2/'
-test_data = 'Fernand_Leger'  # subdirectory containing portraits for landmark detection (under data_dir)
+data_dir = '../dataset/crop_gt_margin_0.25_val/'
+#test_data = 'Fernand_Leger'  # subdirectory containing portraits for landmark detection (under data_dir)
+test_data = ''
 
 use_gt_bb = False  # use ground truth bounding box to crop images. if False, use face detector bounding box (relevant
 # for challenging, common, full & training sets only)
@@ -14,7 +16,8 @@ out_dir = 'out_pred_landmarks'  # directory for saving predicted landmarks
 if not os.path.exists(out_dir):
     os.mkdir(out_dir)
 
-model_path = '~/model_foa/deep_heatmaps-60000'  # model for estimation stage
+#/home/jennifer/Graphics_optimization_final/test_valseperate_fixlmsorder
+model_path = '../test_valseperate_fixlmsorder/model/deep_heatmaps-20000'  # model for estimation stage
 pdm_path = 'pdm_clm_models/pdm_models/'  # models for correction stage
 clm_path = 'pdm_clm_models/clm_models/g_t_all'  # model for tuning stage
 
@@ -30,16 +33,19 @@ map_landmarks_to_original_image = True  # if True, landmark predictions will be 
 
 # load images
 
-bb_dir = os.path.join(data_dir, 'Bounding_Boxes')
-bb_dictionary = load_bb_dictionary(bb_dir, mode='TEST', test_data=test_data)
+# bb_dir = os.path.join(data_dir, 'Bounding_Boxes')
+bb_dir = None
+# bb_dictionary = load_bb_dictionary(bb_dir, mode='TEST', test_data=test_data)
+bb_dictionary = None
 if use_gt_bb:
     bb_type = 'gt'
 else:
     bb_type = 'init'
 
+
 img_list = load_menpo_image_list(
     img_dir=data_dir, test_data=test_data, train_crop_dir=data_dir, img_dir_ns=data_dir, bb_type=bb_type,
-    bb_dictionary=bb_dictionary, mode='TEST', return_transform=map_landmarks_to_original_image)
+    bb_dictionary=bb_dictionary, mode='TEST', return_transform=map_landmarks_to_original_image,num_landmarks=60,use_cropped=True)
 
 # load model
 heatmap_model = DeepHeatmapsModel(

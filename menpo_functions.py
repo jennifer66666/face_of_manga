@@ -249,7 +249,7 @@ def warp_face_image_tps(img, new_shape, lms_grp_name='PTS', warp_mode='constant'
 def load_menpo_image_list(
     img_dir, train_crop_dir, img_dir_ns, mode, bb_dictionary=None, image_size=256, margin=0.25,
     bb_type='gt', test_data='cropped_only', augment_basic=True, augment_texture=False, p_texture=0,
-    augment_geom=False, p_geom=0, verbose=False, return_transform=False,num_landmarks=68):
+    augment_geom=False, p_geom=0, verbose=False, return_transform=False,num_landmarks=60,use_cropped=False):
 
     """load images from image dir to create menpo-type image list"""
 
@@ -304,6 +304,8 @@ def load_menpo_image_list(
         else:
             img_set_dir = os.path.join(img_dir, test_data)
             out_image_list = mio.import_images(img_set_dir, verbose=verbose, normalize=False)
+            if use_cropped:
+                return out_image_list
             out_image_list = out_image_list.map(crop_to_face_image_test)
 
     return out_image_list

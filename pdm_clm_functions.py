@@ -126,12 +126,13 @@ def feature_based_pdm_corr(lms_init, models_dir, train_type='basic', patches=Non
     """ correct landmarks using part-based pdm"""
 
     jaw_line_inds = np.arange(0, 17)
-    nose_inds = np.arange(27, 36)
-    left_eye_inds = np.arange(36, 42)
-    right_eye_inds = np.arange(42, 48)
+    #nose_inds = np.arange(27, 36)
+    #left_eye_inds = np.arange(36, 42)
+    #right_eye_inds = np.arange(42, 48)
     left_brow_inds = np.arange(17, 22)
     right_brow_inds = np.arange(22, 27)
-    mouth_inds = np.arange(48, 68)
+    #mouth_inds = np.arange(48, 68)
+    # 漫画只有左右眉毛和下巴标号和真人脸能对上
 
     '''
     selected number of PCs:
@@ -142,12 +143,15 @@ def feature_based_pdm_corr(lms_init, models_dir, train_type='basic', patches=Non
     mouth:7
     '''
 
-    new_lms = np.zeros((68, 2))
+    new_lms = np.zeros((60, 2))
 
-    parts = ['l_brow', 'r_brow', 'l_eye', 'r_eye', 'mouth', 'nose', 'jaw']
-    part_inds_opt = [left_brow_inds, right_brow_inds, left_eye_inds, right_eye_inds, mouth_inds, nose_inds,
-                     jaw_line_inds]
-    pc_opt = [2, 2, 3, 3, 7, 5, 7]
+    # parts = ['l_brow', 'r_brow', 'l_eye', 'r_eye', 'mouth', 'nose', 'jaw']
+    # part_inds_opt = [left_brow_inds, right_brow_inds, left_eye_inds, right_eye_inds, mouth_inds, nose_inds,
+    #                  jaw_line_inds]
+    # pc_opt = [2, 2, 3, 3, 7, 5, 7]
+    parts = ['l_brow', 'r_brow','jaw']
+    part_inds_opt = [left_brow_inds, right_brow_inds,jaw_line_inds]
+    pc_opt = [2, 2, 7]
 
     for i, part in enumerate(parts):
         part_inds = part_inds_opt[i]

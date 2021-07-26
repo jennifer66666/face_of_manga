@@ -20,6 +20,7 @@ flags.DEFINE_string('img_dir_ns', 'crop_gt_margin_0.25_ns', "directory of train 
 flags.DEFINE_string('epoch_data_dir', 'epoch_data', "directory containing pre-augmented data for each epoch")
 flags.DEFINE_bool('use_epoch_data', False, "use pre-augmented data")
 flags.DEFINE_bool('no_need_bb', False, "whether to use bounding box")
+flags.DEFINE_bool('global_feature', False, "whether to use global_feature")
 
 # logging parameters
 flags.DEFINE_integer('print_every', 100, "print losses to screen + log every X steps")
@@ -109,7 +110,7 @@ def main(_):
         print_every=FLAGS.print_every, save_every=FLAGS.save_every, sample_every=FLAGS.sample_every,
         sample_grid=FLAGS.sample_grid, sample_to_log=FLAGS.sample_to_log, debug_data_size=FLAGS.debug_data_size,
         debug=FLAGS.debug, use_epoch_data=FLAGS.use_epoch_data, epoch_data_dir=FLAGS.epoch_data_dir, 
-        no_need_bb=FLAGS.no_need_bb)
+        no_need_bb=FLAGS.no_need_bb,global_feature=FLAGS.global_feature)
 
     model.train()
 

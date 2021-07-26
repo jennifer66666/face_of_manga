@@ -6,15 +6,17 @@ from data_loading_functions import *
 
 # define paths & parameters for cropping dataset
 # img_dir = '~/#landmark_detection_datasets/'
-img_dir = 'landmark_detection_datasets/'
-dataset = 'training'
+img_dir = 'dataset/'
+dataset = 'ori_only'
 bb_type = 'gt'
 margin = 0.25
 image_size = 256
+num_landmarks = 60
 
-# load bounding boxes
-bb_dir = os.path.join(img_dir, 'Bounding_Boxes')
-bb_dictionary = load_bb_dictionary(bb_dir, mode='TRAIN', test_data=dataset)
+# # load bounding boxes
+# bb_dir = os.path.join(img_dir, 'Bounding_Boxes')
+# bb_dictionary = load_bb_dictionary(bb_dir, mode='TRAIN', test_data=dataset)
+
 
 # directory for saving face crops
 outdir = os.path.join(img_dir, 'crop_'+bb_type+'_margin_'+str(margin))
@@ -23,8 +25,8 @@ if not os.path.exists(outdir):
 
 # load images
 imgs_to_crop = load_menpo_image_list(
-    img_dir=img_dir, train_crop_dir=None, img_dir_ns=None, mode='TRAIN', bb_dictionary=bb_dictionary,
-    image_size=image_size, margin=margin, bb_type=bb_type, augment_basic=False)
+    img_dir=img_dir, train_crop_dir=None, img_dir_ns=None, mode='TRAIN', bb_dictionary=None,
+    image_size=image_size, margin=margin, bb_type=bb_type, augment_basic=False,num_landmarks=num_landmarks)
 
 # save cropped images with matching landmarks
 print ("\ncropping dataset from: "+os.path.join(img_dir, dataset))

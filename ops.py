@@ -53,6 +53,21 @@ def deconv(input, conv_ker, conv_filters, conv_stride=1, conv_padding='SAME',
                                          kernel_initializer=conv_ker_init, name='deconv', reuse=reuse)
         return out
 
+def flatten(inputs, var_scope='layer'):
+
+    with tf.variable_scope(var_scope):
+        out = tf.layers.flatten(inputs, name=None, data_format='channels_last')
+        return out
+
+def dense(inputs,units,activation,var_scope='layer'):
+
+    with tf.variable_scope(var_scope):
+        if activation == "relu":
+            activate = tf.nn.relu
+        elif activation == "softmax":
+            activate = tf.nn.softmax
+        out = tf.layers.dense(inputs, units, activate)
+        return out
 
 def deconv2d_bilinear_upsampling_initializer(shape):
     """Returns the initializer that can be passed to DeConv2dLayer for initializ ingthe

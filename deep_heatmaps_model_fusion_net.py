@@ -20,7 +20,7 @@ class DeepHeatmapsModel(object):
     def __init__(self, mode='TRAIN', train_iter=100000, batch_size=10, learning_rate=1e-3, l_weight_primary=1.,
                  l_weight_fusion=1.,l_weight_upsample=3.,adam_optimizer=True,momentum=0.95,step=100000, gamma=0.1,reg=0,
                  weight_initializer='xavier', weight_initializer_std=0.01, bias_initializer=0.0, image_size=256,c_dim=3,
-                 num_landmarks=68, sigma=1.5, scale=1, margin=0.25, bb_type='gt', win_mult=3.33335,
+                 num_landmarks=60, sigma=1.5, scale=1, margin=0.25, bb_type='gt', win_mult=3.33335,
                  augment_basic=True,augment_texture=False, p_texture=0., augment_geom=False, p_geom=0.,
                  output_dir='output', save_model_path='model',
                  save_sample_path='sample', save_log_path='logs', test_model_path='model/deep_heatmaps-50000',
@@ -29,7 +29,7 @@ class DeepHeatmapsModel(object):
                  train_crop_dir='crop_gt_margin_0.25', img_dir_ns='crop_gt_margin_0.25_ns',
                  print_every=100, save_every=5000, sample_every=5000, sample_grid=9, sample_to_log=True,
                  debug_data_size=20, debug=False, epoch_data_dir='epoch_data', use_epoch_data=False, menpo_verbose=True,
-                 no_need_bb=False):
+                 no_need_bb=False,global_feature = False,l_weight_clf=1.):
 
         # define some extra parameters
 
@@ -88,6 +88,7 @@ class DeepHeatmapsModel(object):
         self.l_weight_primary = l_weight_primary  # primary loss weight
         self.l_weight_fusion = l_weight_fusion  # fusion loss weight
         self.l_weight_upsample = l_weight_upsample  # upsample loss weight
+        self.l_weight_clf = l_weight_clf
 
         self.weight_initializer = weight_initializer  # random_normal or xavier
         self.weight_initializer_std = weight_initializer_std
@@ -111,6 +112,7 @@ class DeepHeatmapsModel(object):
         self.valid_data = valid_data
 
         self.no_need_bb = no_need_bb
+        self.global_feature = global_feature
 
         # load image, bb and landmark data using menpo
         if self.no_need_bb:
@@ -203,6 +205,8 @@ class DeepHeatmapsModel(object):
                     tf.float32, [None, int(self.image_size/4), int(self.image_size/4), self.num_landmarks], 'heatmaps_small')
                 self.lms = tf.placeholder(tf.float32, [None, self.num_landmarks, 2], 'lms')
                 self.pred_lms = tf.placeholder(tf.float32, [None, self.num_landmarks, 2], 'pred_lms')
+                if self.global_feature:
+                    self.classify_label = tf.placeholder(tf.float32, [None, 2], 'pred_classify_label')
 
         elif self.mode == 'TRAIN':
             self.images = tf.placeholder(
@@ -220,6 +224,8 @@ class DeepHeatmapsModel(object):
             self.valid_lms = tf.placeholder(tf.float32, [None, self.num_landmarks, 2], 'valid_lms')
             self.valid_pred_lms = tf.placeholder(tf.float32, [None, self.num_landmarks, 2], 'valid_pred_lms')
 
+            if self.global_feature:
+                self.train_classify_label = tf.placeholder(tf.float32, [None, 2], 'train_classify_label')
             # self.p_texture_log = tf.placeholder(tf.float32, [])
             # self.p_geom_log = tf.placeholder(tf.float32, [])
 
@@ -289,9 +295,35 @@ class DeepHeatmapsModel(object):
 
                     l6 = conv_relu(l5, 1, 512, conv_ker_init=weight_initializer,
                                    conv_bias_init=bias_init, reuse=reuse, var_scope='conv_6')
-                    l7 = conv_relu(l6, 1, 256, conv_ker_init=weight_initializer,
+                    if not self.global_feature:
+                        l7 = conv_relu(l6, 1, 256, conv_ker_init=weight_initializer,
                                    conv_bias_init=bias_init, reuse=reuse, var_scope='conv_7')
-                    primary_out = conv(l7, 1, self.num_landmarks, conv_ker_init=weight_initializer,
+                        primary_out = conv(l7, 1, self.num_landmarks, conv_ker_init=weight_initializer,
+                                            conv_bias_init=bias_init, reuse=reuse, var_scope='conv_8')
+                
+                with tf.name_scope('classify_net'):
+
+                    l_clf_1 = conv_relu_pool(l3, 5, 256, conv_ker_init=weight_initializer, conv_bias_init=bias_init,
+                                        reuse=reuse, var_scope='conv_clf_1')
+                    l_clf_2 = conv_relu_pool(l_clf_1, 5, 128, conv_ker_init=weight_initializer, conv_bias_init=bias_init,
+                                        reuse=reuse, var_scope='conv_clf_2')
+                    l_clf_3 = conv_relu_pool(l_clf_2, 5, 64, conv_ker_init=weight_initializer, conv_bias_init=bias_init,
+                                        reuse=reuse, var_scope='conv_clf_3')
+                    l_clf_4 = conv_relu_pool(l_clf_3, 5, 32, conv_ker_init=weight_initializer, conv_bias_init=bias_init,
+                                        reuse=reuse, var_scope='conv_clf_4')
+                    l_clf_flatten = flatten(l_clf_4)
+                    l_clf_mlp1 = dense(l_clf_flatten,128,"relu",var_scope='mlp_1')
+                    l_clf_mlp2 = dense(l_clf_mlp1,32,"relu",var_scope='mlp_2')
+                    clf_out = dense(l_clf_mlp2,2,"softmax",var_scope='mlp_3')
+                    h_l7 = l6.shape[1]
+                    w_l7 = l6.shape[2]
+                    clf_repeat = tf.repeat(l_clf_mlp1, h_l7*w_l7, axis=1, name=None)
+                    clf_repeat_reshaped = tf.reshape(clf_repeat, [-1,h_l7,w_l7,128], name=None)
+                    if self.global_feature:   
+                        l7_0 = tf.concat([l6,clf_repeat_reshaped], 3, name='conv_7_concate')
+                        l7 = conv_relu(l7_0, 1, 256, conv_ker_init=weight_initializer,
+                                   conv_bias_init=bias_init, reuse=reuse, var_scope='conv_7')
+                        primary_out = conv(l7, 1, self.num_landmarks, conv_ker_init=weight_initializer,
                                             conv_bias_init=bias_init, reuse=reuse, var_scope='conv_8')
 
                 with tf.name_scope('fusion_net'):
@@ -340,14 +372,21 @@ class DeepHeatmapsModel(object):
                                  conv_ker_init=deconv2d_bilinear_upsampling_initializer(
                                      [8, 8, self.num_landmarks, self.num_landmarks]), conv_bias_init=bias_init,
                                  reuse=reuse, var_scope='deconv_1')
-
-                self.all_layers = [l1, l2, l3, l4, l5, l6, l7, primary_out, l_fsn_1, l_fsn_2, l_fsn_3, l_fsn_4,
+                if not self.global_feature:
+                    self.all_layers = [l1, l2, l3, l4, l5, l6, l7, primary_out, l_fsn_1, l_fsn_2, l_fsn_3, l_fsn_4,
                                    fusion_out, out]
-
-                return primary_out, fusion_out, out
+                    return primary_out, fusion_out, out
+                else:
+                    self.all_layers = [l1, l2, l3, l4, l5, l6, l7, primary_out, l_fsn_1, l_fsn_2, l_fsn_3, l_fsn_4,
+                                   fusion_out, out, l_clf_1,l_clf_2,l_clf_3,l_clf_4,l_clf_mlp1,l_clf_mlp2,clf_out]
+                    return primary_out, fusion_out, out, clf_out
+                
 
     def build_model(self):
-        self.pred_hm_p, self.pred_hm_f, self.pred_hm_u = self.heatmaps_network(self.images,name='heatmaps_prediction')
+        if not self.global_feature:
+            self.pred_hm_p, self.pred_hm_f, self.pred_hm_u = self.heatmaps_network(self.images,name='heatmaps_prediction')
+        else:
+            self.pred_hm_p, self.pred_hm_f, self.pred_hm_u,self.pred_clf = self.heatmaps_network(self.images,name='heatmaps_prediction')
 
     def create_loss_ops(self):
 
@@ -383,9 +422,14 @@ class DeepHeatmapsModel(object):
             self.l2_primary = tf.reduce_mean(tf.square(primary_maps_diff))
             self.l2_fusion = tf.reduce_mean(tf.square(fusion_maps_diff))
             self.l2_upsample = tf.reduce_mean(tf.square(upsample_maps_diff))
-
-            self.total_loss = 1000.*(self.l_weight_primary * self.l2_primary + self.l_weight_fusion * self.l2_fusion +
+            self.ce_clf = tf.losses.softmax_cross_entropy(self.train_classify_label, self.pred_clf)
+            
+            if not self.global_feature:
+                self.total_loss = 1000.*(self.l_weight_primary * self.l2_primary + self.l_weight_fusion * self.l2_fusion +
                                      self.l_weight_upsample * self.l2_upsample)
+            else:
+                self.total_loss = 1000.*(self.l_weight_primary * self.l2_primary + self.l_weight_fusion * self.l2_fusion +
+                                     self.l_weight_upsample * self.l2_upsample + self.l_weight_clf * self.ce_clf)
 
             # add weight decay
             self.total_loss += self.reg * tf.add_n(
@@ -560,6 +604,7 @@ class DeepHeatmapsModel(object):
                                          int(self.image_size/4), self.num_landmarks)).astype('float32')
             batch_maps = np.zeros((self.batch_size, self.image_size, self.image_size,
                                    self.num_landmarks)).astype('float32')
+            batch_labels = np.zeros((self.batch_size, 2)).astype('float32')
 
             # create gaussians for heatmap generation
             gaussian_filt_large = create_gaussian_filter(sigma=self.sigma, win_mult=self.win_mult)
@@ -593,9 +638,12 @@ class DeepHeatmapsModel(object):
                     num_landmarks=self.num_landmarks, scale=self.scale, gauss_filt_large=gaussian_filt_large,
                     gauss_filt_small=gaussian_filt_small, win_mult=self.win_mult, sigma=self.sigma,
                     save_landmarks=self.compute_nme)
-
-                feed_dict_train = {self.images: batch_images, self.heatmaps: batch_maps,
+                if not self.global_feature:
+                    feed_dict_train = {self.images: batch_images, self.heatmaps: batch_maps,
                                    self.heatmaps_small: batch_maps_small}
+                else:
+                    feed_dict_train = {self.images: batch_images, self.heatmaps: batch_maps,
+                                   self.heatmaps_small: batch_maps_small,self.train_classify_label:batch_labels}
 
                 # train on batch
                 sess.run(train_op, feed_dict_train)
@@ -611,11 +659,17 @@ class DeepHeatmapsModel(object):
                             batch_maps=batch_maps_pred,batch_landmarks=batch_lms_pred,
                             batch_size=self.batch_size, image_size=self.image_size,
                             num_landmarks=self.num_landmarks)
-
-                        train_feed_dict_log = {
-                            self.images: batch_images, self.heatmaps: batch_maps,
-                            self.heatmaps_small: batch_maps_small, self.train_lms: batch_lms,
-                            self.train_pred_lms: batch_lms_pred}
+                        if not self.global_feature:
+                            train_feed_dict_log = {
+                                self.images: batch_images, self.heatmaps: batch_maps,
+                                self.heatmaps_small: batch_maps_small, self.train_lms: batch_lms,
+                                self.train_pred_lms: batch_lms_pred}
+                        else:
+                            train_feed_dict_log = {
+                                self.images: batch_images, self.heatmaps: batch_maps,
+                                self.heatmaps_small: batch_maps_small, self.train_lms: batch_lms,
+                                self.train_pred_lms: batch_lms_pred,
+                                self.train_classify_label:batch_labels}
 
                         summary, l_p, l_f, l_t, nme = sess.run(
                             [self.batch_summary_op, self.l2_primary, self.l2_fusion, self.total_loss,
@@ -789,7 +843,7 @@ class DeepHeatmapsModel(object):
 
         return map_primary, map_fusion, map_upsample
 
-    def get_landmark_predictions(self, img_list, pdm_models_dir, clm_model_path, reuse=None, map_to_input_size=False):
+    def get_landmark_predictions(self, img_list, pdm_models_dir, clm_model_path, reuse=None, map_to_input_size=False,e_only=False):
 
         """returns dictionary with landmark predictions of each step of the ECpTp algorithm and ECT"""
 
@@ -834,6 +888,9 @@ class DeepHeatmapsModel(object):
 
                 # get landmarks for part-based correction stage
                 p_pdm_lms = feature_based_pdm_corr(lms_init=init_lms, models_dir=pdm_models_dir, train_type='basic')
+                if e_only:
+                    e_list.append(p_pdm_lms)
+                    continue
 
                 # get landmarks for part-based tuning stage
                 try:  # clm may not converge
@@ -874,6 +931,8 @@ class DeepHeatmapsModel(object):
                 ecp_list.append(p_pdm_lms)  # init prediction + part pdm correction (ECp)
                 ecpt_list.append(pdm_clm_lms)  # init prediction + part pdm correction + global tuning (ECpT)
 
+            if e_only:
+                return {'E': e_list}
             pred_dict = {
                 'E': e_list,
                 'ECp': ecp_list,

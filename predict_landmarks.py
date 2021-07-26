@@ -5,7 +5,7 @@ from tensorflow.keras.preprocessing.image import save_img as imsave
 
 # *************** define parameters and paths ***************
 
-data_dir = '../dataset/crop_gt_margin_0.25_val/'
+data_dir = 'dataset/crop_gt_margin_0.25_val/'
 #test_data = 'Fernand_Leger'  # subdirectory containing portraits for landmark detection (under data_dir)
 test_data = ''
 
@@ -17,16 +17,16 @@ if not os.path.exists(out_dir):
     os.mkdir(out_dir)
 
 #/home/jennifer/Graphics_optimization_final/test_valseperate_fixlmsorder
-model_path = '../test_valseperate_fixlmsorder/model/deep_heatmaps-20000'  # model for estimation stage
-pdm_path = 'pdm_clm_models/pdm_models/'  # models for correction stage
-clm_path = 'pdm_clm_models/clm_models/g_t_all'  # model for tuning stage
+model_path = 'test_valseperate_fixlmsorder/model/deep_heatmaps-20000'  # model for estimation stage
+pdm_path = 'face-of-art/pdm_clm_models/pdm_models/'  # models for correction stage
+clm_path = 'face-of-art/pdm_clm_models/clm_models/g_t_all'  # model for tuning stage
 
 outline_tune = False  # if true use tuning stage on eyebrows+jaw, else use tuning stage on jaw only
 # (see paper for details)
 
 save_cropped_imgs = False  # save input images in their cropped version to out_dir.
 
-map_landmarks_to_original_image = True  # if True, landmark predictions will be mapped to match original
+map_landmarks_to_original_image = False  # if True, landmark predictions will be mapped to match original
 # input image size. otherwise the predicted landmarks will match the cropped version (256x256) of the images
 
 # *************** load images and model ***************
@@ -62,16 +62,16 @@ for i, img in enumerate(img_list):
         reuse = True
 
     preds = heatmap_model.get_landmark_predictions(img_list=[img], pdm_models_dir=pdm_path, clm_model_path=clm_path,
-                                                   reuse=reuse, map_to_input_size=map_landmarks_to_original_image)
+                                                   reuse=reuse, map_to_input_size=map_landmarks_to_original_image,e_only=True)
 
-    if map_landmarks_to_original_image:
-        img = img[0]
+    # if map_landmarks_to_original_image:
+    #     img = img[0]
 
-    if outline_tune:
-        pred_lms = preds['ECpTp_out']
-    else:
-        pred_lms = preds['ECpTp_jaw']
-
+    # if outline_tune:
+    #     pred_lms = preds['ECpTp_out']
+    # else:
+    #     pred_lms = preds['ECpTp_jaw']
+    pred_lms = preds['E']
     mio.export_landmark_file(PointCloud(pred_lms[0]), os.path.join(out_dir, img.path.stem + '.pts'),
                              overwrite=True)
     if save_cropped_imgs:

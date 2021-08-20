@@ -4,7 +4,7 @@ The image dataset should be downloaded from [Manga109](http://www.manga109.org/e
 The bounding box of faces should be cropped as [Chu et.al.](https://www.cs.ccu.edu.tw/~wtchu/projects/MangaFace/)  
 The manually labeled landmarks can be found in [oaugereau](https://github.com/oaugereau/FacialLandmarkManga)  
 
-*To run the training  
+* To run the training  
 
 ```
 
@@ -13,7 +13,7 @@ python3  face-of-art/train_heatmaps_network.py --output_dir='test_global' --augm
 --no_need_bb True --valid_data crop_gt_margin_0.25_val --num_landmarks 60 --global_feature
 
 ```
-*To run the inferencing 
+* To run the inferencing 
 ```
 python3 face-of-art/predict_landmarks.py  
 ```
